@@ -1,0 +1,10 @@
+---
+
+- name: Check if file OSI-BINARIES-INSTALLED exists
+  stat:
+    path: "{{ OSI_BIN_PATH }}"
+  register: osi_bin_file_stat
+
+- name: set fact
+  set_fact:
+    osi_file_exists: "{{ osi_bin_file_stat.stat.exists }}"

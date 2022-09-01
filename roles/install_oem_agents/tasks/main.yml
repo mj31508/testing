@@ -1,0 +1,66 @@
+---
+
+- name: Get the build type
+  command: "grep DBTYPE /boot/PNC_PROVISION_CONFIG |tail -1 | awk -F= '{print $2}'"
+  register: dbtype
+
+- name: Verify if the script hasnt run before
+  stat:
+    path: /odb/oem01/orabin/product/odb/oem01/orabin/product
+  register: script_file
+
+- name: checking agent status
+  when: script_file.stat.exists
+  block:
+
+    - name: Determine ORACLE_HOME
+      command: "/bin/ls /odb/oem01/orabin/product 2>/dev/null | grep agent_1 | tail -1"
+      register: oem_vsn_path
+
+    - name: Check agent status
+      vars:
+        em_path: "/odb/oem01/orabin/product/{{ oem_vsn_path.stdout }}/bin"
+      command: "su - oracle -c \"${EM_PATH}/emctl status agentf\""
+      register: agent_status
+      until: "agent_stauts.rc == 0"
+      retries: 70
+      delay: 10
+
+    - name: Perform a set of commands if agent is installed
+      when: agent_status.rc == 0
+      block:
+
+        - name: Display message
+          debug:
+            msg:
+              - "=================================================================================="
+              - "Agent is already installed and runing on primary host. Exiting with success status"
+              - "=================================================================================="
+
+        - name: sleep for 5 mins for RAC restart
+          when: 'RAC' in dbtype.stdout
+          wait_for:
+            timeout: 300
+          delegate_to: localhost
+
+      - name: When agent is not running
+        assert:
+          that: agent_status.rc == 0
+        fail_msg:
+          - "===================================================================================="
+          - "WARNING: /odb/oem01/orabin/product is not empty, but agent is not running on primary after waiting 1 minute"
+          - "Manual intervention needed before continuing"
+          - "Either the OEM agent is installed and not running, or the install procedure failed and needs retryed from within OEM"
+          - "Esiting with failed status"
+          - "===================================================================================="
+
+  
+                  
+        
+
+
+        
+
+
+
+

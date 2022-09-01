@@ -1,0 +1,32 @@
+---
+
+- name: If OSI binaries file exists, No actions
+  when: osi_file_exists
+  block:
+
+    - name: Debug message
+      debug:
+        msg: "OSI Binaries install was already started"
+    
+    - name: get the file contents
+      command: "cat /root/{{ OSI_BIN_PATH }}"
+      register: osi_bin_contents
+      changed_when: false
+
+    - name: Print the file contents
+      debug:
+        msg: "{{ osi_bin_contents.stdout_lines }}"
+      
+
+- name: If OSI binaries does not exists
+  when: osi_file_exists
+  vars:          
+    template_prop: "{% if ORACLE_VERSION == '12CR2' %}12cr2_Single_Instance_Database.properties.Jul2018.TEMPLATE{% endif %}"
+    template_script: "{% if ORACLE_VERSION == '12CR2' %}12cr2_Single_Instance_Provisioning.sh.TEMPLATE{% endif %}"
+  block:
+
+    - name: Create the properties file
+      command: "/bin/cat/ {{ OMS_DIR }}/{{ template_prop }} |sed \"s#%%TARGET_HOST%%#{{ inventory_hostname }}#\" > {{ OMS_WORKDIR }}/{{ prop_file }}"
+
+    - name: Run CMD_MKPROPERTIES
+

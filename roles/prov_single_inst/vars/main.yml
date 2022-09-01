@@ -1,0 +1,10 @@
+---
+
+OMS_DIR: /opt/app/Cruise/midrange_automation/osi_bin_install
+OMS_WORKDIR: "{{ OMS_DIR }}/work"
+OMS_LOGDIR: "{{ OMS_DIR }}/logs"
+prop_file: "Single_Instance_Database_{{ HOST_SHORTNAME }}.properties"
+instance_name: "Provision_SI_DB_SSB_{{ HOST_SHORTNAME }}_{{ lookup('pipe', 'date +\"%m_%d_%Y_%H_%M_%S_%p\"') }}"
+FULL_PROPERTIES: "{{ OMS_WORKDIR }}/{{ prop_file }}"
+SCRIPTNAME: "Single_Instance_Provisioning_{{ inventory_hostname }}_short.sh"
+log_file: "{{ OMS_LOGDIR }}/{{ SCRIPTNAME }}.log"
