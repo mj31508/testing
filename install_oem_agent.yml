@@ -1,0 +1,27 @@
+---
+
+- name: Check agent status
+  hosts: play_group
+  gather_facts: true
+  roles:
+    - install_oem_agents
+
+- name: set the directories and lock the passwds
+  hosts: remote_hosts
+  gather_facts: false
+  tasks: 
+
+    - name: Set the dir and lock the passwds
+      include_role:
+        - name: install_oem_agents
+          tasks_from: oracle_nodes.yml
+
+- name: send email
+  hosts: play_group
+  gather_fact: false
+  tasks:
+
+    - name: Send email
+      include_role:
+        - name: install_oem_agents
+          tasks_from: sendmail.yml

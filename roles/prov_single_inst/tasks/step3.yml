@@ -1,0 +1,35 @@
+---
+
+- name: set fact
+  vars:
+    domain_name: "{{ inventory_hostname.split('.')[1:] | join('.') }}"
+  set_fact:        
+    property_status: "{% if 'r' in domain_name.lower() %}
+                      {{ inventory_hostname }}:host:LifeCycle Status:RND
+                      {% elif 'u' in domain_name.lower() %}
+                      {{ inventory_hostname }}:host:LifeCycle Status:UAT
+                      {% elif 'q' in domain_name.lower() %}
+                      {{ inventory_hostname }}:host:LifeCycle Status:QA
+                      {% elif 'p' in domain_name.lower() %}
+                      {{ inventory_hostname }}:host:LifeCycle Status:Not in Service
+                      {% else %}
+                      Unknown Environment
+                      {% endif %}"
+
+- name: Raise an exception if propertystatus is unknown
+  assert:
+    that: 'Unknown' not in property_status
+    fail_msg: "{{ property_status }}"
+
+- name: Create command to set OEM host property ( Lifecycle status )
+  command: "/opt/appemcli/emcli set_target_property_value -property_records=\"{{ property_status }}\""
+
+- name: Run binaries command
+  command: "{{ install_bin_cmd }} > {{ log_path }}"
+
+- name: Run command to get instance status
+  shell: "/opt/app/emcli/emcli get_instance_status -instance=$(head -2 {{ log_path }} | tail -1 2>/dev/null)"
+  register: cmd_status_output
+  until: "'COMPLETED' in cmd_status_output.stdout"
+  retries: 40
+  delay: 10

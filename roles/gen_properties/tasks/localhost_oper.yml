@@ -1,0 +1,13 @@
+---
+
+- name: If OSI binaries does not exists
+  when: not osi_file_exists
+  vars:          
+    template_prop: "{% if ORACLE_VERSION == '12CR2' %}12cr2_Single_Instance_Database.properties.Jul2018.TEMPLATE{% endif %}"
+    template_script: "{% if ORACLE_VERSION == '12CR2' %}12cr2_Single_Instance_Provisioning.sh.TEMPLATE{% endif %}"
+  block:
+
+    - name: Create the properties file
+      command: "/bin/cat/ {{ OMS_DIR }}/{{ template_prop }} |sed \"s#%%TARGET_HOST%%#{{ inventory_hostname }}#\" > {{ OMS_WORKDIR }}/{{ prop_file }}"
+
+    - name: Run CMD_MKPROPERTIES

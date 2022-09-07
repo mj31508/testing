@@ -1,0 +1,7 @@
+---
+
+- name: send completion email
+  mail:
+    subject: "Cruise OEM Agent(s) for {{ dbtype }} COMPLETED on {{ REMOTEHOSTS }}"
+    to: "{{ MAIL_RECIPIENTS }}"
+    body: "COMPLETED"

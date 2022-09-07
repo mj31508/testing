@@ -1,0 +1,6 @@
+---
+
+- name: Create the file to say binaries were started
+  lineinfile:
+    path: /root/OSI-BINARIES-INSTALLED
+    line: "Cruise OSI BINARIES provisioning started at {{ '%d-%m-%Y %H:%M' | strftime(ansible_date_time.epoch) }}\"

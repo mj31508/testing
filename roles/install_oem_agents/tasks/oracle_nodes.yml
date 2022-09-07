@@ -1,0 +1,51 @@
+---
+
+- name: Unlock the odsoral and oracle accounts before starting the install
+  block:
+
+    - name: Unlock the odsoral and oracle accounts before starting the install | For dbytpe in OSI or RAC
+      when: dbtype == 'OSI' or dbtype =='RAC'
+      block:
+
+        - name: Create .ssh directory
+          file:
+            path: /odb/ods01/orabin/admin/.ssh
+            owner: odsora1
+            group: install
+            mode: '0755'
+
+        - name: Get the key content
+          command: "cat $(dirname ${0})/keys.odsora1"
+          register: key_content
+
+        - name: Add odsora keys to authorized keys
+          authorized_keys:
+            user: "{{ remote_user }}"
+            state: present
+            key: "{{ key_content.stdout }}"
+
+        - name: Fix permissions on this server
+          file:
+            path: "{{ item }}"
+            owner: oracle
+            group: oniinstall
+            mode: '0775'
+            recurse: yes
+          loop:
+            - /odb/oem01/orabin/admin/oraInventory
+            - /odb/oem01/orabin/admin/orading_oracle
+
+        - name: Lock the password for odsora1 and oracle
+          user:
+            name: "{{ item }}"
+            password_lock: yes
+          loop:
+            - odsora1
+            - oracle
+
+    - name: Unlock the odsoral and oracle accounts before starting the install | For dbytpe in MYSQL
+      when: dbtype == 'MYSQL'
+      user:
+        name: oracle
+        password_lock: yes    
+        

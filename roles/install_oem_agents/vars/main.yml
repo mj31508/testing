@@ -5,3 +5,4 @@ OMS_WORKDIR: "{{ OMS_DIR }}/work"
 OMS_LOGDIR: "{{ OMS_DIR }}/logs"
 TEMPLATE: AGENT_DEPLOY_template.sh
 HOST_SHORTNAME: "{{ inventory_hostname.split('.')[0] }}"
+MAIL_RECIPIENTS: [ "paul.ferronei@pnc.com" ]

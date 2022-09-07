@@ -1,0 +1,15 @@
+---
+
+- name: If OSI binaries does not exists
+  when: not osi_file_exists
+  block:
+
+    - name: Create single instance provision scirpt
+      command: "/bin/cat {{ OMS_DIR }}/{{ template_script }} | sed \"s#%%PROPERTIES%%#{{ FULL_PROPERTIES }}#\" | sed \"s/%%INSTANCENAME%%/{{ instance_name }}/\" > {{ OMS_WORKDIR }}/{{ SCRIPTNAME }} /bin/chmod u+x {{ OMS_WORKDIR }}/{{ SCRIPTNAME }}"
+
+    - name: Rename the existing logfile
+      command: "[ -f {{ log_file }} ] && mv {{ log_file }} {{ log_file }}.OLD"
+
+    - name: set fact for the script {{ SCRIPTNAME }}
+      set_fact:
+        install_bin_cmd: "{{ OMS_WORKDIR }}/{{ SCRIPTNAME }} > {{ log_path }} 2>&1"

@@ -4,13 +4,22 @@
   command: "grep DBTYPE /boot/PNC_PROVISION_CONFIG |tail -1 | awk -F= '{print $2}'"
   register: dbtype
 
+- name: set fact dbtype
+  set_fact:
+    dbtype: "{{ dbtype.stdout }}"
+
+- name: set fact dbtype
+  set_fact:
+    dbtype: "{{ dbtype.stdout }}"
+  delegate_to: localhost
+
 - name: Verify if the script hasnt run before
   stat:
     path: /odb/oem01/orabin/product/odb/oem01/orabin/product
-  register: script_file
+  register: script_run
 
 - name: checking agent status
-  when: script_file.stat.exists
+  when: script_run.stat.exists
   block:
 
     - name: Determine ORACLE_HOME
@@ -20,7 +29,7 @@
     - name: Check agent status
       vars:
         em_path: "/odb/oem01/orabin/product/{{ oem_vsn_path.stdout }}/bin"
-      command: "su - oracle -c \"${EM_PATH}/emctl status agentf\""
+      command: "su - oracle -c \"{{ em_path }}/emctl status agentf\""
       register: agent_status
       until: "agent_stauts.rc == 0"
       retries: 70
@@ -38,7 +47,7 @@
               - "=================================================================================="
 
         - name: sleep for 5 mins for RAC restart
-          when: 'RAC' in dbtype.stdout
+          when: 'RAC' in dbtype
           wait_for:
             timeout: 300
           delegate_to: localhost
@@ -53,13 +62,63 @@
           - "Either the OEM agent is installed and not running, or the install procedure failed and needs retryed from within OEM"
           - "Esiting with failed status"
           - "===================================================================================="
-
   
+- name: Get the remotehosts if dytype is RAC
+  when: dbtype == 'RAC'
+  command: "grep SERVERNODES configure_asmnode.conf | grep -o '\".*\"' | sed 's/\"//g' 2>/dev/null)"
+  register: rac_remotehosts
+
+- name: set some facts
+  set_fact:
+    DNSOUT: "{{ ansible_hostname }}"
+    DOMAIN: "{{ ansible_hostname.split('.')[0] }}"
+    REMOTEHOSTS: "{% if dbtype == 'OSI' %}
+                  {{ HOST_SHORTNAME }}
+                  {% elif dbtype == 'RAC' %}
+                  {{ rac_remotehosts.stdout }}
+                  {% elif dbtype == 'MYSQL' %}
+                  {{ HOST_SHORTNAME }}
+                  {% else %}
+                  Unknown DBTYPE - EXITING
+                  {% endif %}"
                   
-        
+- name: Raise exception if unknown dbtype
+  assert:
+    that: dbtype in ['OSI', 'RAC', 'MYSQL']
+    fail_msg: "Unknown DBTYPE"
 
+- name: get the first node from remotehosts
+  command: echo {{ REMOTEHOSTS }} | awk '{ print $ }'
+  register: firstnode_remotehost
 
-        
+- name: Get the server list
+  command: "echo {{ REMOTEHOSTS }} | sed -e 's/ /. '{{ DOMAIN }}';/g').{{ DOMAIN }}"
+  register: server_list
+
+- name: Get the date
+  command: date +"%B_%d_%Y_%H:%M%S_%p_%Z"
+  register: date_fmt
+
+- name: set more facts
+  set_fact:
+    SCRIPTNAME: "{{ dbtype }}_Agent_Deploy_{{ firstnode_remotehost.stdout }}.sh"
+    SERVERLIST: "{{ server_list.stdout }}"
+    LOG: "{{ OMS_LOGDIR }}/{{ SCRIPTNAME }}.log"
+    MAIL_RECIPIENTS: "paul.ferronei@pnc.com"
+    SESSION_NAME: "Add_SSB_{{ dbtype }}_{{ firstnode_remotehost.stdout }}_{{ date_fmt.stdout }}"
+
+- name: Create the script in localhost
+  command: "/bin/cat {{ OMS_DIR }}/{{ TEMPLATE }} | sed -e \"s/%%SERVER)LIST%%/{{ SERVERLIST }}/\" -e \"s/%%SESSION_NAME%%/{{ SESSION_NAME }}/\" > {{ OMS_WORKDIR }}/{{ SCRIPTNAME }}; /bin/chmod u+x {{ OMS_WORKDIR }}/{{ SCRIPTNAME }} 2>/dev/null"
+  delegate_to: localhost
+
+- name: Add the host to the inventory
+  add_host:
+    groups: "remote_hosts"
+    name: "{{ item }}"
+    ansible_host: "{{ item }}"
+    parent_host: "{{ inventory_hostname }}"
+  loop:  "{{ REMOTEHOSTS }}"
+  changed_when: false
 
 
 
