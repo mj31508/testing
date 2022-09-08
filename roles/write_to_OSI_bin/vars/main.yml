@@ -1,0 +1,5 @@
+---
+
+ORACLE_VERSION: "12CR2"
+OSI_BIN_PATH: /root/OSI-BINARIES-INSTALLED
+HOST_SHORTNAME: "{{ inventory_hostname.split('.')[0] }}"

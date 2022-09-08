@@ -1,11 +1,11 @@
 ---
 
-- name: Check if the OSI file exists
+- name: Check if the OSI file exists and Create the properties
   hosts: play_group
   gather_facts: false
   become: yes
   roles:
-    - check_file_exists
+    - check_file_and_gen_prop
 
 - name: Create the properties file and script to run
   hosts: localhost
@@ -13,18 +13,31 @@
   become: yes
   tasks:
 
-    - name: Create the properties file
-      include_role:
-        - name: gen_properties
-          tasks_from: localhost_oper.yml
-
     - name: Run the script
+      include_role:
+        - name: prov_single_inst
+          tasks_from: step1.yml
+
+- name: Write a mesage to OSI file
+  hosts: play_group
+  gather_facts: false
+  become: yes
+  roles:
+    - write_to_OSI_bin
+
+- name: Create script file
+  hosts: localhosts
+  gather_facts: false
+  tasks:
+
+    - name: create the script
       include_role:
         - name: prov_single_inst
           tasks_from: step1.yml
 
 - name: Write message to OSI binary file
   hosts: play_group
+  gather_facts: false
   become: yes
   tasks:
 

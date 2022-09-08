@@ -73,11 +73,11 @@
     DNSOUT: "{{ ansible_hostname }}"
     DOMAIN: "{{ ansible_hostname.split('.')[0] }}"
     REMOTEHOSTS: "{% if dbtype == 'OSI' %}
-                  {{ HOST_SHORTNAME }}
+                  {{ HOST_SHORTNAME.split(' ') }}
                   {% elif dbtype == 'RAC' %}
                   {{ rac_remotehosts.stdout }}
                   {% elif dbtype == 'MYSQL' %}
-                  {{ HOST_SHORTNAME }}
+                  {{ HOST_SHORTNAME.split(' ') }}
                   {% else %}
                   Unknown DBTYPE - EXITING
                   {% endif %}"
@@ -119,6 +119,7 @@
     parent_host: "{{ inventory_hostname }}"
   loop:  "{{ REMOTEHOSTS }}"
   changed_when: false
+  delegate_to: localhost
 
 
 

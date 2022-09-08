@@ -43,7 +43,7 @@
             - odsora1
             - oracle
 
-    - name: Unlock the odsoral and oracle accounts before starting the install | For dbytpe in MYSQL
+    - name: lock the odsoral and oracle accounts before starting the install | For dbytpe in MYSQL
       when: dbtype == 'MYSQL'
       user:
         name: oracle

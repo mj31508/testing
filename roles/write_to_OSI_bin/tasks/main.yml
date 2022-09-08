@@ -1,0 +1,20 @@
+---
+
+- name: If OSI binaries file exists, No actions
+  when: osi_file_exists
+  block:
+
+    - name: Debug message
+      debug:
+        msg: "OSI Binaries install was already started"
+    
+    - name: Get the file contents
+      command: "cat /root/{{ OSI_BIN_PATH }}"
+      register: osi_bin_contents
+      changed_when: false
+
+    - name: Print the file contents
+      debug:
+        msg: "{{ osi_bin_contents.stdout_lines }}"
+      
+
